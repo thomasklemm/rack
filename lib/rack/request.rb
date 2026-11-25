@@ -828,8 +828,11 @@ module Rack
         params.to_params_hash
       end
 
+      EMPTY_HEADER = [].freeze
+      private_constant :EMPTY_HEADER
+
       def split_header(value)
-        value ? value.strip.split(/[, \t]+/) : []
+        value ? value.strip.split(/[, \t]+/) : EMPTY_HEADER
       end
 
       # ipv6 extracted from resolv stdlib, simplified
