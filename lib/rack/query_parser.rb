@@ -38,6 +38,21 @@ module Rack
     # to handle bad query strings also now handles other limits.
     ParamsTooDeepError = QueryLimitError
 
+    # Also included in Rack::Utils, which requires this file.
+    module Unescape # :nodoc:
+      private
+
+      # Unescapes a URI escaped string with +encoding+. +encoding+ will be the
+      # target encoding of the string returned, and it defaults to UTF-8
+      def unescape(s, encoding = Encoding::UTF_8)
+        return URI.decode_www_form_component(s, encoding) unless s.instance_of?(String) && s.encoding.ascii_compatible?
+
+        raise ArgumentError, "invalid %-encoding (#{s})" if /%(?!\h\h)/.match?(s)
+        CGI.unescape(s, Encoding::BINARY).force_encoding(encoding)
+      end
+    end
+    include Unescape
+
     def self.make_default(param_depth_limit, **options)
       new(Params, param_depth_limit, **options)
     end
@@ -272,13 +287,6 @@ module Rack
       end
     rescue ArgumentError => e
       raise InvalidParameterError, e.message, e.backtrace
-    end
-
-    def unescape(string, encoding = Encoding::UTF_8)
-      return URI.decode_www_form_component(string, encoding) unless string.instance_of?(String) && string.encoding.ascii_compatible?
-
-      raise ArgumentError, "invalid %-encoding (#{string})" if /%(?!\h\h)/.match?(string)
-      CGI.unescape(string, Encoding::BINARY).force_encoding(encoding)
     end
 
     class Params < Hash
